@@ -19,7 +19,8 @@ const AddBondingTokenModal = ({
       payload: { amount, operatorAddress },
       meta
     })
-  }, [dispatch])
+    }, [dispatch, operatorAddress]
+  )
 
   const onSubmit = useCallback(
     async (formValues, awaitingPromise) => {
@@ -28,7 +29,7 @@ const AddBondingTokenModal = ({
 
       handleDepositForOperator(weiAmount, awaitingPromise)
     },
-    [operatorAddress, handleDepositForOperator]
+    [handleDepositForOperator]
   )
 
   return (

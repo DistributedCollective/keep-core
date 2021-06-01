@@ -29,7 +29,6 @@ const MintBondTokensForm = ({
         placeholder="0"
         normalize={normalizeAmount}
         format={formatFormAmount}
-        placeholder="0"
       />
       <div
         className="flex row center mt-2"
