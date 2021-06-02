@@ -30,6 +30,10 @@ RUN mkdir -p $APP_DIR
 WORKDIR $APP_DIR
 COPY . $APP_DIR/
 
+COPY go.mod $APP_DIR/
+COPY go.sum $APP_DIR/
+
+
 RUN GOOS=linux go build -ldflags "-X main.version=$VERSION -X main.revision=$REVISION" -a -o $APP_NAME ./ && \
 	mv $APP_NAME $BIN_PATH
 
