@@ -31,7 +31,6 @@
   },
   "homepage": "https://github.com/keep-network/keep-core/contracts/solidity",
   "dependencies": {
-    "@keep-network/tbtc": "^1.1.1-rc.3",
     "@openzeppelin/upgrades": "^2.7.2",
     "openzeppelin-solidity": "2.4.0"
   },
