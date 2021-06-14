@@ -14,8 +14,6 @@
     "truffle": "truffle",
     "clean": "rm -rf build",
     "compile": "npm run clean && truffle compile --contracts_build_directory=./build/truffle",
-    "deploy:local": "truffle migrate --network sov",
-    "deploy": "truffle migrate --network sov",
     "test": "truffle compile && mocha --exit --recursive --timeout 75000",
     "test:quick": "mocha --exit --recursive --timeout 45000",
     "test:quick:watch": "mocha --watch --exit --recursive --timeout 45000",
