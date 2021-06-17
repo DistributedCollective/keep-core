@@ -22,6 +22,11 @@ else
   echo "Using network ${DEST_NETWORK}"
 fi
 
+if [[ -z "${INITIALIZE_OPERATORS}" ]]; then
+  echo "INITIALIZE_OPERATORS env not set, Exiting"
+  exit 1
+fi
+
 # Run script.
 LOG_START='\n\e[1;36m' # new line + bold + color
 LOG_END='\n\e[0m' # new line + reset color
@@ -37,8 +42,11 @@ npm install
 printf "${LOG_START}Migrating contracts for Keep-Core...${LOG_END}"
 rm -rf build/
 truffle migrate --reset --network $DEST_NETWORK
-printf "${LOG_START}Delegating tokens...${LOG_END}"
-truffle exec ./scripts/delegate-tokens.js --network $DEST_NETWORK
+
+if [[ $INITIALIZE_OPERATORS != 0 ]]; then
+  printf "${LOG_START}Delegating tokens...${LOG_END}"
+  truffle exec ./scripts/delegate-tokens.js --network $DEST_NETWORK
+fi
 
 cd $TBTC_SOL_PATH
 
@@ -77,7 +85,10 @@ ln -s build/contracts artifacts
 npm link
 
 printf "${LOG_START}Initializing Keep-Ecdsa...${LOG_END}"
-truffle exec scripts/lcl-initialize.js --network $DEST_NETWORK
+
+if [[ $INITIALIZE_OPERATORS != 0 ]]; then
+  truffle exec scripts/lcl-initialize.js --network $DEST_NETWORK
+fi
 
 cd $DASHBOARD_DIR_PATH
 
