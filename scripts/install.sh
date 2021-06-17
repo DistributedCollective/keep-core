@@ -13,6 +13,11 @@ else
   echo "Using network ${DEST_NETWORK}"
 fi
 
+if [[ -z "${INITIALIZE_OPERATORS}" ]]; then
+  echo "INITIALIZE_OPERATORS env not set, Exiting"
+  exit 1
+fi
+
 # Read user inputs.
 read -p "Enter ethereum accounts password [$KEEP_ETHEREUM_PASSWORD_DEFAULT]: " ethereum_password
 KEEP_ETHEREUM_PASSWORD=${ethereum_password:-$KEEP_ETHEREUM_PASSWORD_DEFAULT}
@@ -44,8 +49,10 @@ npx truffle migrate --reset --network $DEST_NETWORK
 
 KEEP_CORE_SOL_ARTIFACTS_PATH="$KEEP_CORE_SOL_PATH/build/contracts"
 
-printf "${LOG_START}Initializing contracts...${LOG_END}"
-npx truffle exec scripts/delegate-tokens.js --network $DEST_NETWORK
+if [[ $INITIALIZE_OPERATORS != 0 ]]; then 
+  printf "${LOG_START}Initializing contracts...${LOG_END}"
+  npx truffle exec scripts/delegate-tokens.js --network $DEST_NETWORK
+fi
 
 printf "${LOG_START}Updating keep-core client configs...${LOG_END}"
 for CONFIG_FILE in $KEEP_CORE_CONFIG_DIR_PATH/*.toml
