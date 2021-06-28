@@ -157,11 +157,11 @@ contract TokenStakingEscrow is Ownable {
 
         deposits[previousOperator].redelegated = deposit.redelegated.add(amount);
 
-        TokenSender(address(keepToken)).approveAndCall(
-            owner(), // TokenStaking contract associated with the escrow
-            amount,
-            abi.encodePacked(extraData, grantId)
-        );
+        tokenRecipient spender = tokenRecipient(owner());
+
+        if (keepToken.approve(owner(), amount)) {
+            spender.receiveApproval(address(this), amount, address(keepToken), abi.encodePacked(extraData, grantId));
+        }
 
         emit DepositRedelegated(
             previousOperator,
@@ -334,11 +334,12 @@ contract TokenStakingEscrow is Ownable {
 
         uint256 amountLeft = availableAmount(operator);
         deposits[operator].withdrawn = deposit.withdrawn.add(amountLeft);
-        TokenSender(address(keepToken)).approveAndCall(
-            receivingEscrow,
-            amountLeft,
-            abi.encode(operator, deposit.grantId)
-        );
+
+        tokenRecipient spender = tokenRecipient(receivingEscrow);
+
+        if (keepToken.approve(receivingEscrow, amountLeft)) {
+            spender.receiveApproval(address(this), amountLeft, address(keepToken), abi.encode(operator, deposit.grantId));
+        }
     }
 
     /// @notice Withdraws the entire amount that is still deposited in the
@@ -399,7 +400,7 @@ contract TokenStakingEscrow is Ownable {
             "Stake for the operator already deposited in the escrow"
         );
 
-        keepToken.safeTransferFrom(from, address(this), value);
+        keepToken.safeTransferFrom(from, address(this), value); //
         deposits[operator] = Deposit(grantId, value, 0, 0);
 
         emit Deposited(operator, grantId, value);
@@ -443,7 +444,7 @@ contract TokenStakingEscrow is Ownable {
         uint256 amount = withdrawable(operator);
 
         deposits[operator].withdrawn = deposit.withdrawn.add(amount);
-        keepToken.safeTransfer(grantee, amount);
+        keepToken.safeTransfer(grantee, amount); //
 
         emit DepositWithdrawn(operator, grantee, amount);
     }
@@ -455,7 +456,7 @@ contract TokenStakingEscrow is Ownable {
     ) internal {
         uint256 amount = availableAmount(operator);
         deposits[operator].withdrawn = amount;
-        keepToken.safeTransfer(grantManager, amount);
+        keepToken.safeTransfer(grantManager, amount); //
 
         emit RevokedDepositWithdrawn(operator, grantManager, amount);
     }

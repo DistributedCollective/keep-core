@@ -1,6 +1,6 @@
 async function delegateStake(
-  tokenContract, 
-  stakingContract, 
+  tokenContract,
+  stakingContract,
   tokenOwner,
   operator,
   beneficiary,
@@ -12,12 +12,15 @@ async function delegateStake(
     Buffer.from(operator.substr(2), 'hex'),
     Buffer.from(authorizer.substr(2), 'hex')
   ]);
-    
-  return tokenContract.approveAndCall(
-    stakingContract.address, amount, 
-    '0x' + data.toString('hex'), 
-    {from: tokenOwner}
-  );
+
+
+  const success = await tokenContract.approve(stakingContract.address, amount, { from: tokenOwner })
+  if (success) {
+    await stakingContract.receiveApproval(tokenOwner, amount, tokenContract.address, '0x' + data.toString('hex'))
+    return true
+  } else {
+    return false
+  }
 }
 
 async function delegateStakeFromGrant(
@@ -35,13 +38,19 @@ async function delegateStakeFromGrant(
     Buffer.from(operator.substr(2), 'hex'),
     Buffer.from(authorizer.substr(2), 'hex')
   ])
-
+  console.log({
+    stakingContractAddress,
+    grantee,
+    amount,
+    grantId
+  
+  })
   return grantContract.stake(
-    grantId, 
-    stakingContractAddress, 
-    amount, 
-    delegation, 
-    {from: grantee}
+    grantId,
+    stakingContractAddress,
+    amount,
+    delegation,
+    { from: grantee }
   )
 }
 
@@ -61,10 +70,10 @@ async function delegateStakeFromManagedGrant(
   ])
 
   return managedGrant.stake(
-    stakingContractAddress, 
-    amount, 
-    delegation, 
-    {from: grantee}
+    stakingContractAddress,
+    amount,
+    delegation,
+    { from: grantee }
   )
 }
 

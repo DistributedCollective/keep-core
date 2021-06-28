@@ -76,11 +76,10 @@ describe("TokenStaking/DelegatedAuthority", async () => {
       Buffer.from(authorizer.substr(2), 'hex')
     ]);
 
-    return token.approveAndCall(
-      stakingContract.address, amount,
-      '0x' + data.toString('hex'),
-      {from: owner}
-    );
+    
+
+    await token.approve(stakingContract.address, amount, { from: owner })
+    return stakingContract.receiveApproval(owner, amount, token.address, '0x' + data.toString('hex'), { from: owner })
   }
 
   async function hasDelegatedAuthorization(operatorContract) {

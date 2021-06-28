@@ -23,7 +23,7 @@ describe("Rewards/Upgrades", () => {
     let timestamps
     let firstIntervalStart
 
-    let token, rewards, newRewards
+    let token, rewards, newRewards, testToken
 
     before(async () => {
         token = await KeepToken.new({ from: owner })
@@ -45,12 +45,11 @@ describe("Rewards/Upgrades", () => {
             termLength,
             {from: owner}
          )
-         await token.approveAndCall(
-            rewards.address,
-            totalRewards,
-            "0x0",
-            {from: owner}
-        )
+        const result = await token.approve(rewards.address, totalRewards, { from: owner })
+        if (result) {
+            await rewards.receiveApproval(owner, totalRewards, token.address, "0x0");
+        }
+
         await rewards.markAsFunded({from: owner})
     })
 
@@ -224,12 +223,11 @@ describe("Rewards/Upgrades", () => {
             await rewards.finalizeRewardsUpgrade({from: owner})
             
             const rewardsTopUp = 420000
-            await token.approveAndCall(
-                rewards.address,
-                rewardsTopUp,
-                "0x0",
-                {from: owner}
-            )
+            const result = await token.approve(rewards.address, rewardsTopUp, { from: owner })
+        
+            if (result) {
+                await rewards.receiveApproval(owner, rewardsTopUp, token.address, "0x0");
+            }
 
             // interval 0 allocates 50,000
             // interval 1 allocates 95,000

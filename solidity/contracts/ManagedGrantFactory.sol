@@ -158,11 +158,11 @@ contract ManagedGrantFactory {
             params.policy
         );
 
-        token.approveAndCall(
-            address(tokenGrant),
-            params.amount,
-            grantData
-        );
+        tokenRecipient spender = tokenRecipient(address(tokenGrant));
+
+        if (token.approve(address(tokenGrant), params.amount)) {
+            spender.receiveApproval(address(this), params.amount, address(token), grantData);
+        }
 
         emit ManagedGrantCreated(
             _managedGrant,

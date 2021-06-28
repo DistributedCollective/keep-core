@@ -118,7 +118,7 @@ contract RewardsStub is Rewards {
     }
 
     function _distributeReward(bytes32 groupIndexBytes, uint256 _value) internal {
-        token.safeTransfer(
+        token.transfer(
             msg.sender,
             _value
         );

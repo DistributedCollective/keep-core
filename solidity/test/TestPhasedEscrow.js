@@ -67,13 +67,9 @@ describe("PhasedEscrow", () => {
       const unknownToken = await KeepToken.new({from: owner})
       const amountApproved = web3.utils.toBN(9991)
 
+      await unknownToken.approve(phasedEscrow.address, amountApproved, { from: owner })
       await expectRevert(
-        unknownToken.approveAndCall(
-          phasedEscrow.address,
-          amountApproved,
-          "0x0",
-          {from: owner}
-        ),
+        rewards.receiveApproval(owner, amountApproved, unknownToken.address, "0x0"),
         "Unsupported token"
       )
     })

@@ -177,11 +177,11 @@ contract StakingPortBacker is Ownable {
             false
         );
 
-        TokenSender(address(keepToken)).approveAndCall(
-            address(newStakingContract),
-            oldStakeBalance,
-            delegationData
-        );
+        tokenRecipient spender = tokenRecipient(address(newStakingContract));
+
+        if (keepToken.approve(address(newStakingContract), oldStakeBalance)) {
+            spender.receiveApproval(address(this), oldStakeBalance, address(keepToken), delegationData);
+        }
 
         emit StakeCopied(msg.sender, operator, oldStakeBalance);
     }
@@ -215,7 +215,7 @@ contract StakingPortBacker is Ownable {
         require(value == stake.amount, "Unexpected amount");
 
         // Transfer tokens to this contract.
-        keepToken.safeTransferFrom(from, address(this), value);
+        keepToken.safeTransferFrom(from, address(this), value); //
         copiedStakes[operator].paidBack = true;
 
         newStakingContract.transferStakeOwnership(operator, stake.owner);
@@ -259,7 +259,7 @@ contract StakingPortBacker is Ownable {
     /// the contract has available to back stake copying.
     /// @param amount The amount of tokens that should be withdrawn.
     function withdraw(uint256 amount) public onlyOwner {
-        keepToken.safeTransfer(owner(), amount);
+        keepToken.safeTransfer(owner(), amount); //
         emit TokensWithdrawn(amount);
     }
 

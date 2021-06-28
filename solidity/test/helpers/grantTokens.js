@@ -13,7 +13,9 @@ async function grantTokens(
     [from, grantee, unlockingDuration.toNumber(), start.toNumber(), cliff.toNumber(), revocable, stakingPolicy]
   );
 
-  await token.approveAndCall(grantContract.address, amount, grantData, {from: from})
+  await token.approve(grantContract.address, amount, { from: from })
+  await grantContract.receiveApproval(from, amount, token.address, grantData)
+
   return (await grantContract.getPastEvents())[0].args[0].toNumber()
 }
 
@@ -29,9 +31,10 @@ async function grantTokensToManagedGrant(
     ['address', 'uint256', 'uint256', 'uint256', 'bool', 'address'],
     [grantee, unlockingDuration.toNumber(), start.toNumber(), cliff.toNumber(), revocable, stakingPolicy]
   );
-  await token.approveAndCall(
-    managedGrantFactory.address, amount, extraData, {from: from}
-  );
+
+  await token.approve(managedGrantFactory.address, amount, { from: from })
+  await managedGrantFactory.receiveApproval(from, amount, token.address, extraData)
+
   let event = (await managedGrantFactory.getPastEvents())[0];
   return event.args['grantAddress'];
 }

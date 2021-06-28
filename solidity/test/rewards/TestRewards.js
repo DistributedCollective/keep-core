@@ -38,12 +38,11 @@ describe('Rewards', () => {
     }
 
     async function fund(amount) {
-        await token.approveAndCall(
-            rewards.address,
-            amount,
-            "0x0",
-            { from: funder }
-        )
+        const result = await token.approve(rewards.address, amount, { from: funder })
+        
+        if (result) {
+            await rewards.receiveApproval(owner, amount, token.address, "0x0");
+        }
     }
 
     before(async () => {
