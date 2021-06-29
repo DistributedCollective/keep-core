@@ -14,7 +14,7 @@ async function grantTokens(
   );
 
   await token.approve(grantContract.address, amount, { from: from })
-  await grantContract.receiveApproval(from, amount, token.address, grantData)
+  await grantContract.receiveApproval(from, amount, token.address, grantData, { from: from })
 
   return (await grantContract.getPastEvents())[0].args[0].toNumber()
 }
