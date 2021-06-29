@@ -68,12 +68,13 @@ describe('TokenStaking', function() {
       Buffer.from(operator.substr(2), 'hex'),
       Buffer.from(authorizer.substr(2), 'hex')
     ]);
-    
-    return token.approveAndCall(
-      stakingContract.address, amount, 
-      '0x' + data.toString('hex'), 
-      {from: owner}
-    );
+
+    const isSuccess = await token.approve(stakingContract.address, amount, { from: owner })
+    if (isSuccess) {
+      return stakingContract.receiveApproval(owner, amount, token.address, '0x' + data.toString('hex'), { from: owner })
+    } else {
+      return isSuccess
+    }
   }
 
   describe("undelegationPeriod", async () => {

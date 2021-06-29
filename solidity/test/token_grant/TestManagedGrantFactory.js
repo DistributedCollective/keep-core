@@ -132,9 +132,8 @@ describe('TokenGrant/ManagedGrantFactory', () => {
       );
 
       await token.approve(factory.address, grantAmount, { from: grantCreator })
-      await rewards.receiveApproval(owner, grantAmount, token.address, extraData);
+      await factory.receiveApproval(grantCreator, grantAmount, token.address, extraData, { from: grantCreator });
       
-
       let event = (await factory.getPastEvents())[0];
       expect(event.args['grantee']).to.equal(grantee);
       let managedGrantAddress = event.args['grantAddress'];

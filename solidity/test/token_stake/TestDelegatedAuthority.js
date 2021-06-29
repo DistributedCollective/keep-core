@@ -76,10 +76,12 @@ describe("TokenStaking/DelegatedAuthority", async () => {
       Buffer.from(authorizer.substr(2), 'hex')
     ]);
 
-    
-
-    await token.approve(stakingContract.address, amount, { from: owner })
-    return stakingContract.receiveApproval(owner, amount, token.address, '0x' + data.toString('hex'), { from: owner })
+    const isSuccess = await token.approve(stakingContract.address, amount, { from: owner })
+    if (isSuccess) {
+      return stakingContract.receiveApproval(owner, amount, token.address, '0x' + data.toString('hex'), { from: owner })
+    } else {
+      return isSuccess
+    }
   }
 
   async function hasDelegatedAuthorization(operatorContract) {

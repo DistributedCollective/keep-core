@@ -24,7 +24,6 @@ import "./StakeDelegatable.sol";
 import "./TokenStaking.sol";
 import "./libraries/RolesLookup.sol";
 import "./utils/BytesLib.sol";
-import "./TokenSender.sol";
 
 /// @title StakingPortBacker
 /// @notice Provides additional liquidity from the primary token supply for

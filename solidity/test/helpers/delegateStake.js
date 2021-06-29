@@ -38,13 +38,7 @@ async function delegateStakeFromGrant(
     Buffer.from(operator.substr(2), 'hex'),
     Buffer.from(authorizer.substr(2), 'hex')
   ])
-  console.log({
-    stakingContractAddress,
-    grantee,
-    amount,
-    grantId
-  
-  })
+
   return grantContract.stake(
     grantId,
     stakingContractAddress,

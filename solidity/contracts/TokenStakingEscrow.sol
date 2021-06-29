@@ -24,7 +24,6 @@ import "./KeepToken.sol";
 import "./utils/BytesLib.sol";
 import "./TokenGrant.sol";
 import "./ManagedGrant.sol";
-import "./TokenSender.sol";
 
 /// @title TokenStakingEscrow
 /// @notice Escrow lets the staking contract to deposit undelegated, granted

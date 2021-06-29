@@ -61,7 +61,7 @@ describe('BeaconRewards', () => {
         )
 
         await token.approve(rewardsContract.address, totalBeaconRewards, { from: owner })
-        await rewards.receiveApproval(owner, totalBeaconRewards, token.address, "0x0");
+        await rewardsContract.receiveApproval(owner, totalBeaconRewards, token.address, "0x0", { from: owner })
 
         await rewardsContract.markAsFunded({from: owner})
 

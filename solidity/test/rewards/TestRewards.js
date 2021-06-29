@@ -41,7 +41,7 @@ describe('Rewards', () => {
         const result = await token.approve(rewards.address, amount, { from: funder })
         
         if (result) {
-            await rewards.receiveApproval(owner, amount, token.address, "0x0");
+            await rewards.receiveApproval(funder, amount, token.address, "0x0", { from: funder })
         }
     }
 

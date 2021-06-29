@@ -50,7 +50,7 @@ describe('BeaconBackportRewards', () => {
 
         const result = await token.approve(rewardsContract.address, totalBeaconRewards, { from: owner })
         if (result) {
-            await rewards.receiveApproval(owner, totalBeaconRewards, token.address, "0x0");
+            await rewardsContract.receiveApproval(owner, totalBeaconRewards, token.address, "0x0", { from: owner })
         }
 
         await rewardsContract.markAsFunded({from: owner})
