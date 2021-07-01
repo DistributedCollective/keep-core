@@ -69,9 +69,9 @@ import "./KeepToken.sol";
 /// and the beacon operator contract acts as the "factory".
 contract Rewards is Ownable {
     using SafeMath for uint256;
-    // using SafeERC20 for KeepToken;
+    using SafeERC20 for IERC20;
 
-    KeepToken public token;
+    IERC20 public token;
 
     // Array representing the percentage of unallocated rewards
     // available for each reward interval.
@@ -134,7 +134,7 @@ contract Rewards is Ownable {
         uint256 _termLength,
         uint256 _minimumKeepsPerInterval
     ) public {
-        token = KeepToken(_token);
+        token = IERC20(_token);
         firstIntervalStart = _firstIntervalStart;
         intervalWeights = _intervalWeights;
         termLength = _termLength;

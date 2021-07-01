@@ -1,6 +1,7 @@
 pragma solidity ^0.5.4;
 
 import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 import "./utils/BytesLib.sol";
 
@@ -13,11 +14,11 @@ import "./GrantStakingPolicy.sol";
 /// @notice Creates managed grants that permit grantee reassignment
 /// and use pre-defined staking policies.
 contract ManagedGrantFactory {
-    using SafeERC20 for KeepToken;
+    using SafeERC20 for IERC20;
     using BytesLib for bytes;
     using BytesLib for address;
 
-    KeepToken public token;
+    IERC20 public token;
     TokenGrant public tokenGrant;
 
     struct Params {
@@ -40,7 +41,7 @@ contract ManagedGrantFactory {
         address _tokenAddress,
         address _tokenGrant
     ) public {
-        token = KeepToken(_tokenAddress);
+        token = IERC20(_tokenAddress);
         tokenGrant = TokenGrant(_tokenGrant);
     }
 
@@ -66,7 +67,7 @@ contract ManagedGrantFactory {
         address _token,
         bytes memory _extraData
     ) public {
-        require(KeepToken(_token) == token, "Invalid token contract");
+        require(IERC20(_token) == token, "Invalid token contract");
         (address _grantee,
          uint256 _duration,
          uint256 _start,
