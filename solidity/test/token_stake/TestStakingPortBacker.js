@@ -448,7 +448,7 @@ describe("TokenStaking/StakingPortBacker", () => {
       await anotherToken.approve(stakingPortBacker.address, delegatedAmount, { from: tokenOwner })
       await expectRevert(
         stakingPortBacker.receiveApproval(tokenOwner, delegatedAmount, anotherToken.address, data),
-        "Not a KEEP token"
+        "Invalid token"
       )
     })
 
