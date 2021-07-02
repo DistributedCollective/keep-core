@@ -26,7 +26,7 @@ import "./utils/PercentUtils.sol";
 import "./utils/BytesLib.sol";
 import "./Authorizations.sol";
 import "./TokenStakingEscrow.sol";
-import "./TokenSender.sol";
+import "./KeepToken.sol";
 
 
 /// @title TokenStaking
@@ -155,7 +155,7 @@ contract TokenStaking is Authorizations, StakeDelegatable {
         require(_extraData.length >= 60, "Corrupted delegation data");
 
         // Transfer tokens to this contract.
-        token.safeTransferFrom(_from, address(this), _value);
+        token.transferFrom(_from, address(this), _value);
 
         address operator = _extraData.toAddress(20);
         // See if there is an existing delegation for this operator...
@@ -565,7 +565,7 @@ contract TokenStaking is Authorizations, StakeDelegatable {
 
         uint256 tattletaleReward = (totalAmountToBurn.percent(5)).percent(rewardMultiplier);
 
-        token.safeTransfer(tattletale, tattletaleReward);
+        token.transfer(tattletale, tattletaleReward);
         token.burn(totalAmountToBurn.sub(tattletaleReward));
     }
 
@@ -706,15 +706,20 @@ contract TokenStaking is Authorizations, StakeDelegatable {
         uint256 _amount
     ) internal {
         if (grantStaking.hasGrantDelegated(_operator)) {
+            tokenRecipient spender = tokenRecipient(address(escrow));
+
             // For tokens staked from a grant, transfer them to the escrow.
-            TokenSender(address(token)).approveAndCall(
-                address(escrow),
-                _amount,
-                abi.encode(_operator, grantStaking.getGrantForOperator(_operator))
-            );
+            if (token.approve(address(escrow), _amount)) {
+                spender.receiveApproval(
+                    address(this),
+                    _amount,
+                    address(token),
+                    abi.encode(_operator, grantStaking.getGrantForOperator(_operator))
+                );
+            }
         } else {
             // For liquid tokens staked, transfer them straight to the owner.
-            token.safeTransfer(_owner, _amount);
+            token.transfer(_owner, _amount);
         }
     }
 }

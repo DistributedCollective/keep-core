@@ -24,7 +24,6 @@ import "./StakeDelegatable.sol";
 import "./TokenStaking.sol";
 import "./libraries/RolesLookup.sol";
 import "./utils/BytesLib.sol";
-import "./TokenSender.sol";
 
 /// @title StakingPortBacker
 /// @notice Provides additional liquidity from the primary token supply for
@@ -70,7 +69,7 @@ contract StakingPortBacker is Ownable {
     /// delegations.
     uint256 public constant maxAllowedBackingDuration = 7776000; // ~3 months
 
-    IERC20 public keepToken;
+    IERC20 public token;
     TokenGrant internal tokenGrant;
     StakeDelegatable public oldStakingContract;
     TokenStaking public newStakingContract;
@@ -86,12 +85,12 @@ contract StakingPortBacker is Ownable {
     mapping(address => CopiedStake) public copiedStakes; // operator -> copied stake info
 
     constructor(
-        IERC20 _keepToken,
+        IERC20 _token,
         TokenGrant _tokenGrant,
         StakeDelegatable _oldStakingContract,
         TokenStaking _newStakingContract
     ) public {
-        keepToken = _keepToken;
+        token = _token;
         tokenGrant = _tokenGrant;
         oldStakingContract = _oldStakingContract;
         newStakingContract = _newStakingContract;
@@ -177,11 +176,11 @@ contract StakingPortBacker is Ownable {
             false
         );
 
-        TokenSender(address(keepToken)).approveAndCall(
-            address(newStakingContract),
-            oldStakeBalance,
-            delegationData
-        );
+        tokenRecipient spender = tokenRecipient(address(newStakingContract));
+
+        if (token.approve(address(newStakingContract), oldStakeBalance)) {
+            spender.receiveApproval(address(this), oldStakeBalance, address(token), delegationData);
+        }
 
         emit StakeCopied(msg.sender, operator, oldStakeBalance);
     }
@@ -195,16 +194,16 @@ contract StakingPortBacker is Ownable {
     /// @param value Approved amount for the transfer. It has to be the same
     /// as the amount of tokens in the original staking relationship at the
     /// moment when this relationship was copied to the new staking contract.
-    /// @param token KEEP token contract address.
+    /// @param _token KEEP token contract address.
     /// @param extraData ABI-encoded operator address from the staking
     /// relationship that is repaid.
     function receiveApproval(
         address from,
         uint256 value,
-        address token,
+        address _token,
         bytes memory extraData
     ) public {
-        require(token == address(keepToken), "Not a KEEP token");
+        require(_token == address(token), "Invalid token");
         require(extraData.length == 32, "Corrupted input data");
         address operator = abi.decode(extraData, (address));
 
@@ -215,7 +214,7 @@ contract StakingPortBacker is Ownable {
         require(value == stake.amount, "Unexpected amount");
 
         // Transfer tokens to this contract.
-        keepToken.safeTransferFrom(from, address(this), value);
+        token.safeTransferFrom(from, address(this), value);
         copiedStakes[operator].paidBack = true;
 
         newStakingContract.transferStakeOwnership(operator, stake.owner);
@@ -259,7 +258,7 @@ contract StakingPortBacker is Ownable {
     /// the contract has available to back stake copying.
     /// @param amount The amount of tokens that should be withdrawn.
     function withdraw(uint256 amount) public onlyOwner {
-        keepToken.safeTransfer(owner(), amount);
+        token.safeTransfer(owner(), amount);
         emit TokensWithdrawn(amount);
     }
 

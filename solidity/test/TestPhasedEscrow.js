@@ -67,22 +67,18 @@ describe("PhasedEscrow", () => {
       const unknownToken = await KeepToken.new({from: owner})
       const amountApproved = web3.utils.toBN(9991)
 
+      await unknownToken.approve(phasedEscrow.address, amountApproved, { from: owner })
       await expectRevert(
-        unknownToken.approveAndCall(
-          phasedEscrow.address,
-          amountApproved,
-          "0x0",
-          {from: owner}
-        ),
+        phasedEscrow.receiveApproval(owner, amountApproved, unknownToken.address, "0x0"),
         "Unsupported token"
       )
     })
 
     it("transfers all approved tokens", async () => {
       const amountApproved = web3.utils.toBN(9993)
-      await token.approveAndCall(phasedEscrow.address, amountApproved, "0x0", {
-        from: owner,
-      })
+
+      await token.approve(phasedEscrow.address, amountApproved, { from: owner })
+      await phasedEscrow.receiveApproval(owner, amountApproved, token.address, "0x0", { from: owner })
 
       const actualBalance = await token.balanceOf(phasedEscrow.address)
       expect(actualBalance).to.eq.BN(amountApproved)
@@ -505,25 +501,18 @@ describe("BatchedPhasedEscrow", () => {
       const unknownToken = await KeepToken.new({from: owner})
       const amountApproved = web3.utils.toBN(9991)
 
+      await unknownToken.approve(batchedPhasedEscrow.address, amountApproved, { from: owner })
       await expectRevert(
-        unknownToken.approveAndCall(
-          batchedPhasedEscrow.address,
-          amountApproved,
-          "0x0",
-          {from: owner}
-        ),
+        batchedPhasedEscrow.receiveApproval(owner, amountApproved, unknownToken.address, "0x0", { from: owner }),
         "Unsupported token"
       )
     })
 
     it("transfers all approved tokens", async () => {
       const amountApproved = web3.utils.toBN(9993)
-      await token.approveAndCall(
-        batchedPhasedEscrow.address,
-        amountApproved,
-        "0x0",
-        {from: owner}
-      )
+      
+      await token.approve(batchedPhasedEscrow.address, amountApproved, { from: owner })
+      await batchedPhasedEscrow.receiveApproval(owner, amountApproved, token.address, "0x0", { from: owner })
 
       const actualBalance = await token.balanceOf(batchedPhasedEscrow.address)
       expect(actualBalance).to.eq.BN(amountApproved)
@@ -922,9 +911,9 @@ describe("BeaconRewards to PhasedEscrow transfer", async () => {
       {from: owner}
     )
 
-    await token.approveAndCall(rewardsContract.address, totalRewards, "0x0", {
-      from: owner,
-    })
+    await token.approve(rewardsContract.address, totalRewards, { from: owner })
+    await rewardsContract.receiveApproval(owner, totalRewards, token.address, "0x0", { from: owner })
+
     await rewardsContract.markAsFunded({from: owner})
   })
 

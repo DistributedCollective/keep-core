@@ -60,12 +60,9 @@ describe('BeaconRewards', () => {
             { from: owner }
         )
 
-        await token.approveAndCall(
-            rewardsContract.address,
-            totalBeaconRewards,
-            "0x0",
-            { from: owner }
-        )
+        await token.approve(rewardsContract.address, totalBeaconRewards, { from: owner })
+        await rewardsContract.receiveApproval(owner, totalBeaconRewards, token.address, "0x0", { from: owner })
+
         await rewardsContract.markAsFunded({from: owner})
 
         // create 64 operators and beneficiaries, delegate stake for them

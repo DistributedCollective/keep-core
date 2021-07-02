@@ -1,3 +1,5 @@
+// npm run test test/token_stake/TestStakingPortBacker.js
+
 const {contract, accounts, web3} = require("@openzeppelin/test-environment")
 const {expectRevert, expectEvent, time} = require("@openzeppelin/test-helpers")
 const {initTokenStaking} = require("../helpers/initContracts")
@@ -442,74 +444,70 @@ describe("TokenStaking/StakingPortBacker", () => {
     it("fails for unknown token", async () => {
       let anotherToken = await KeepToken.new({from: deployer})
       const data = web3.eth.abi.encodeParameters(["address"], [operatorOne])
+
+      await anotherToken.approve(stakingPortBacker.address, delegatedAmount, { from: tokenOwner })
       await expectRevert(
-        anotherToken.approveAndCall(
-          stakingPortBacker.address, delegatedAmount, data, {from: tokenOwner}
-        ),
-        "Not a KEEP token"
+        stakingPortBacker.receiveApproval(tokenOwner, delegatedAmount, anotherToken.address, data),
+        "Invalid token"
       )
     })
 
     it("fails for less tokens than backed", async () => {
       const data = web3.eth.abi.encodeParameters(["address"], [operatorOne])
+      await token.approve(stakingPortBacker.address, delegatedAmount.subn(1), { from: tokenOwner })
+
       await expectRevert(
-        token.approveAndCall(
-          stakingPortBacker.address, delegatedAmount.subn(1), data, {from: tokenOwner}
-        ),
+        stakingPortBacker.receiveApproval(tokenOwner, delegatedAmount.subn(1), token.address, data),
         "Unexpected amount"
-      )  
+      )
     })
 
     it("fails for more tokens than backed", async () => {
       const data = web3.eth.abi.encodeParameters(["address"], [operatorOne])
+      await token.approve(stakingPortBacker.address, delegatedAmount.addn(1), { from: tokenOwner })
+
       await expectRevert(
-        token.approveAndCall(
-          stakingPortBacker.address, delegatedAmount.addn(1), data, {from: tokenOwner}
-        ),
+        stakingPortBacker.receiveApproval(tokenOwner, delegatedAmount.addn(1), token.address, data),
         "Unexpected amount"
-      )  
+      )
     })
 
     it("fails for operator with no tokens backed", async () => {
       const data = web3.eth.abi.encodeParameters(["address"], [operatorFour])
+      await token.approve(stakingPortBacker.address, delegatedAmount, { from: tokenOwner })
+
       await expectRevert(
-        token.approveAndCall(
-          stakingPortBacker.address, delegatedAmount, data, {from: tokenOwner}
-        ),
+        stakingPortBacker.receiveApproval(tokenOwner, delegatedAmount, token.address, data),
         "Stake not copied for the operator"
-      )  
+      )
     })
 
     it("fails for corrupted input data", async () => {
+      await token.approve(stakingPortBacker.address, delegatedAmount, { from: tokenOwner })
+
       await expectRevert(
-        token.approveAndCall(
-          stakingPortBacker.address, 
-          delegatedAmount, 
-          web3.eth.abi.encodeParameters(["uint256", "uint256"], [1, 2]), 
-          {from: tokenOwner}
-        ),
+        stakingPortBacker.receiveApproval(tokenOwner, delegatedAmount, token.address, web3.eth.abi.encodeParameters(["uint256", "uint256"], [1, 2])),
         "Corrupted input data"
-      )    
+      )
     })
 
     it("can be done only one time for the operator", async () => {
       const data = web3.eth.abi.encodeParameters(["address"], [operatorOne])
-      await token.approveAndCall(
-        stakingPortBacker.address, delegatedAmount, data, {from: tokenOwner}
-      )  
+      await token.approve(stakingPortBacker.address, delegatedAmount, { from: tokenOwner })
+      await stakingPortBacker.receiveApproval(tokenOwner, delegatedAmount, token.address, data)
+      
+      await token.approve(stakingPortBacker.address, delegatedAmount, { from: tokenOwner })
       await expectRevert(
-        token.approveAndCall(
-          stakingPortBacker.address, delegatedAmount, data, {from: tokenOwner}
-        ),
+        stakingPortBacker.receiveApproval(tokenOwner, delegatedAmount, token.address, data),
         "Already paid back"
       ) 
     })
 
     it("changes liquid tokens staking relationship owner to token owner", async () => {
       const data = web3.eth.abi.encodeParameters(["address"], [operatorOne])
-      await token.approveAndCall(
-        stakingPortBacker.address, delegatedAmount, data, {from: tokenOwner}
-      )
+
+      await token.approve(stakingPortBacker.address, delegatedAmount, { from: tokenOwner })
+      await stakingPortBacker.receiveApproval(tokenOwner, delegatedAmount, token.address, data)
       
       expect(await newTokenStaking.ownerOf(operatorOne)).to.equal(tokenOwner)
     })
@@ -517,9 +515,9 @@ describe("TokenStaking/StakingPortBacker", () => {
     it("changes grant staking relationship owner to grantee", async () => {
       const data = web3.eth.abi.encodeParameters(["address"], [operatorTwo])
       await token.transfer(grantee, delegatedAmount, {from: deployer})
-      await token.approveAndCall(
-        stakingPortBacker.address, delegatedAmount, data, {from: grantee}
-      )
+
+      await token.approve(stakingPortBacker.address, delegatedAmount, { from: grantee })
+      await stakingPortBacker.receiveApproval(grantee, delegatedAmount, token.address, data)
       
       expect(await newTokenStaking.ownerOf(operatorTwo)).to.equal(grantee) 
     })
@@ -527,25 +525,25 @@ describe("TokenStaking/StakingPortBacker", () => {
     it("changes managed grant staking relationship owner to managed grantee", async () => {
       const data = web3.eth.abi.encodeParameters(["address"], [operatorThree])
       await token.transfer(managedGrantee, delegatedAmount, {from: deployer})
-      await token.approveAndCall(
-        stakingPortBacker.address, delegatedAmount, data, {from: managedGrantee}
-      )
+
+      await token.approve(stakingPortBacker.address, delegatedAmount, { from: managedGrantee })
+      await stakingPortBacker.receiveApproval(managedGrantee, delegatedAmount, token.address, data)
       
       expect(await newTokenStaking.ownerOf(operatorThree)).to.equal(managedGrantee) 
     })
 
     it("fails when not done by the eventual staking relationship owner", async () => {
       const data = web3.eth.abi.encodeParameters(["address"], [operatorOne])
+
+      await token.approve(stakingPortBacker.address, delegatedAmount, { from: operatorOne })
       await expectRevert(
-        token.approveAndCall(
-          stakingPortBacker.address, delegatedAmount, data, {from: operatorOne}
-        ),
+        stakingPortBacker.receiveApproval(operatorOne, delegatedAmount, token.address, data),
         "Not authorized to pay back"
       )
+
+      await token.approve(stakingPortBacker.address, delegatedAmount, { from: thirdParty })
       await expectRevert(
-        token.approveAndCall(
-          stakingPortBacker.address, delegatedAmount, data, {from: thirdParty}
-        ),
+        stakingPortBacker.receiveApproval(thirdParty, delegatedAmount, token.address, data),
         "Not authorized to pay back"
       )
     })
@@ -564,17 +562,15 @@ describe("TokenStaking/StakingPortBacker", () => {
       const currentBalance = await newTokenStaking.balanceOf(operatorOne)
 
       const data = web3.eth.abi.encodeParameters(["address"], [operatorOne])
+      
+      await token.approve(stakingPortBacker.address, currentBalance, { from: tokenOwner })
       await expectRevert(
-        token.approveAndCall(
-          stakingPortBacker.address, currentBalance, data, {from: tokenOwner}
-        ),
+        stakingPortBacker.receiveApproval(tokenOwner, currentBalance, token.address, data),
         "Unexpected amount"
       ) // reverts - tokens were slashed but we expect the original amount to
         // be repaid;
-
-      await token.approveAndCall(
-        stakingPortBacker.address, delegatedAmount, data, {from: tokenOwner}
-      )
+      await token.approve(stakingPortBacker.address, delegatedAmount, { from: tokenOwner })
+      await stakingPortBacker.receiveApproval(tokenOwner, delegatedAmount, token.address, data)
       // ok, no revert - the original copied amount has been paid back
     })
   })

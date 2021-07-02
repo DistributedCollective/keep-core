@@ -135,7 +135,9 @@ describe('TokenGrant', function() {
       [account_two, grantee, unlockingDuration.toNumber(), start.toNumber(), cliff.toNumber(), false, permissivePolicy.address]
     );
 
-    await token.approveAndCall(grantContract.address, amount, grantData, {from: grant_manager});
+    await token.approve(grantContract.address, amount, { from: grant_manager })
+    await grantContract.receiveApproval(grant_manager, amount, token.address, grantData, { from: grant_manager })
+
     let grantId = (await grantContract.getPastEvents())[0].args[0].toNumber();
 
     let schedule = await grantContract.getGrantUnlockingSchedule(grantId);

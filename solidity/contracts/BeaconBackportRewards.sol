@@ -118,7 +118,7 @@ contract BeaconBackportRewards is Rewards {
         // Only pay other members if dividend is nonzero.
         if(dividend > 0) {
             for (uint256 i = 0; i < memberCount - 1; i++) {
-                token.safeTransfer(
+                token.transfer(
                     tokenStaking.beneficiaryOf(members[i]),
                     dividend
                 );
@@ -128,7 +128,7 @@ contract BeaconBackportRewards is Rewards {
         // Transfer of dividend for the last member. Remainder might be equal to
         // zero in case of even distribution or some small number.
         uint256 remainder = _value.mod(memberCount);
-        token.safeTransfer(
+        token.transfer(
             tokenStaking.beneficiaryOf(members[memberCount - 1]),
             dividend.add(remainder)
         );

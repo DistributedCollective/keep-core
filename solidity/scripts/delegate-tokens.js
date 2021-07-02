@@ -38,14 +38,14 @@ module.exports = async function () {
         Buffer.from(authorizer.substr(2), 'hex')
       ]).toString('hex');
 
-      staked = await token.approveAndCall(
-        tokenStaking.address,
-        formatAmount(20000000, 18),
-        delegation,
-        { from: owner }
-      ).catch((err) => {
+      let staked = false
+
+      try {
+        staked = await token.approve(tokenStaking.address, formatAmount(20000000, 18), { from: owner })
+        await tokenStaking.receiveApproval(owner, formatAmount(20000000, 18), token.address, delegation, { from: owner })
+      } catch (err) {
         console.log(`could not stake KEEP tokens for ${operator}: ${err}`);
-      });
+      }
 
       await tokenStaking.authorizeOperatorContract(operator, operatorContract.address, { from: authorizer });
 

@@ -69,9 +69,9 @@ import "./KeepToken.sol";
 /// and the beacon operator contract acts as the "factory".
 contract Rewards is Ownable {
     using SafeMath for uint256;
-    using SafeERC20 for KeepToken;
+    using SafeERC20 for IERC20;
 
-    KeepToken public token;
+    IERC20 public token;
 
     // Array representing the percentage of unallocated rewards
     // available for each reward interval.
@@ -134,7 +134,7 @@ contract Rewards is Ownable {
         uint256 _termLength,
         uint256 _minimumKeepsPerInterval
     ) public {
-        token = KeepToken(_token);
+        token = IERC20(_token);
         firstIntervalStart = _firstIntervalStart;
         intervalWeights = _intervalWeights;
         termLength = _termLength;
@@ -166,7 +166,7 @@ contract Rewards is Ownable {
     ) public {
         require(IERC20(_token) == token, "Unsupported token");
 
-        token.safeTransferFrom(_from, address(this), _value);
+        token.transferFrom(_from, address(this), _value); 
 
         uint256 currentBalance = token.balanceOf(address(this));
         uint256 beforeBalance = totalRewards.sub(dispensedRewards);
@@ -617,11 +617,15 @@ contract Rewards is Ownable {
 
         emit UpgradeFinalized(amountToTransfer);
 
-        bool success = token.approveAndCall(
-            newRewardsContract,
-            amountToTransfer,
-            bytes("")
-        );
+
+        tokenRecipient spender = tokenRecipient(newRewardsContract);
+        bool success = false;
+
+        if (token.approve(newRewardsContract, amountToTransfer)) {
+            spender.receiveApproval(address(this), amountToTransfer, address(token), bytes(""));
+            success = true;
+        }
+
         require(success, "Upgrade finalization failed");
         
 
@@ -635,11 +639,15 @@ contract Rewards is Ownable {
     /// @param amount The amount to deallocate
     function deallocate(uint256 amount) internal {
         if (upgradeFinalizedTimestamp != 0) {
-            bool success = token.approveAndCall(
-                newRewardsContract,
-                amount,
-                bytes("")
-            );
+
+            tokenRecipient spender = tokenRecipient(newRewardsContract);
+            bool success = false;
+
+            if (token.approve(newRewardsContract, amount)) {
+                spender.receiveApproval(address(this), amount, address(token), bytes(""));
+                success = true;
+            }
+
             if (!success) {
                 unallocatedRewards = unallocatedRewards.add(amount);
             }

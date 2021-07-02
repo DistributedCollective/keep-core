@@ -16,6 +16,7 @@ pragma solidity 0.5.17;
 
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 import "./libraries/grant/UnlockingSchedule.sol";
@@ -24,7 +25,6 @@ import "./KeepToken.sol";
 import "./utils/BytesLib.sol";
 import "./TokenGrant.sol";
 import "./ManagedGrant.sol";
-import "./TokenSender.sol";
 
 /// @title TokenStakingEscrow
 /// @notice Escrow lets the staking contract to deposit undelegated, granted
@@ -68,7 +68,7 @@ contract TokenStakingEscrow is Ownable {
         address escrow
     );
 
-    IERC20 public keepToken;
+    IERC20 public token;
     TokenGrant public tokenGrant;
 
     struct Deposit {
@@ -87,10 +87,10 @@ contract TokenStakingEscrow is Ownable {
     mapping(address => mapping (address => bool)) internal authorizedEscrows;
 
     constructor(
-        KeepToken _keepToken,
+        IERC20 _token,
         TokenGrant _tokenGrant
     ) public {
-        keepToken = _keepToken;
+        token = _token;
         tokenGrant = _tokenGrant;
     }
 
@@ -102,17 +102,17 @@ contract TokenStakingEscrow is Ownable {
     /// @param from Address depositing tokens - it has to be the address of
     /// TokenStaking contract owning TokenStakingEscrow.
     /// @param value The amount of KEEP tokens deposited.
-    /// @param token The address of KEEP token contract.
+    /// @param _token The address of KEEP token contract.
     /// @param extraData ABI-encoded data containing operator address (32 bytes)
     /// and grant ID (32 bytes).
     function receiveApproval(
         address from,
         uint256 value,
-        address token,
+        address _token,
         bytes memory extraData
     ) public {
-        require(IERC20(token) == keepToken, "Not a KEEP token");
-        require(msg.sender == token, "KEEP token is not the sender");
+        require(IERC20(_token) == token, "Not a KEEP token");
+        require(msg.sender == _token, "KEEP token is not the sender");
         require(extraData.length == 64, "Unexpected data length");
 
         (address operator, uint256 grantId) = abi.decode(
@@ -157,11 +157,11 @@ contract TokenStakingEscrow is Ownable {
 
         deposits[previousOperator].redelegated = deposit.redelegated.add(amount);
 
-        TokenSender(address(keepToken)).approveAndCall(
-            owner(), // TokenStaking contract associated with the escrow
-            amount,
-            abi.encodePacked(extraData, grantId)
-        );
+        tokenRecipient spender = tokenRecipient(owner());
+
+        if (token.approve(owner(), amount)) {
+            spender.receiveApproval(address(this), amount, address(token), abi.encodePacked(extraData, grantId));
+        }
 
         emit DepositRedelegated(
             previousOperator,
@@ -334,11 +334,12 @@ contract TokenStakingEscrow is Ownable {
 
         uint256 amountLeft = availableAmount(operator);
         deposits[operator].withdrawn = deposit.withdrawn.add(amountLeft);
-        TokenSender(address(keepToken)).approveAndCall(
-            receivingEscrow,
-            amountLeft,
-            abi.encode(operator, deposit.grantId)
-        );
+
+        tokenRecipient spender = tokenRecipient(receivingEscrow);
+
+        if (token.approve(receivingEscrow, amountLeft)) {
+            spender.receiveApproval(address(this), amountLeft, address(token), abi.encode(operator, deposit.grantId));
+        }
     }
 
     /// @notice Withdraws the entire amount that is still deposited in the
@@ -399,7 +400,7 @@ contract TokenStakingEscrow is Ownable {
             "Stake for the operator already deposited in the escrow"
         );
 
-        keepToken.safeTransferFrom(from, address(this), value);
+        token.safeTransferFrom(from, address(this), value); //
         deposits[operator] = Deposit(grantId, value, 0, 0);
 
         emit Deposited(operator, grantId, value);
@@ -443,7 +444,7 @@ contract TokenStakingEscrow is Ownable {
         uint256 amount = withdrawable(operator);
 
         deposits[operator].withdrawn = deposit.withdrawn.add(amount);
-        keepToken.safeTransfer(grantee, amount);
+        token.safeTransfer(grantee, amount);
 
         emit DepositWithdrawn(operator, grantee, amount);
     }
@@ -455,7 +456,7 @@ contract TokenStakingEscrow is Ownable {
     ) internal {
         uint256 amount = availableAmount(operator);
         deposits[operator].withdrawn = amount;
-        keepToken.safeTransfer(grantManager, amount);
+        token.safeTransfer(grantManager, amount);
 
         emit RevokedDepositWithdrawn(operator, grantManager, amount);
     }

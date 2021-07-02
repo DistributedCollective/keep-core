@@ -4,13 +4,8 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20Burnable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./TokenStaking.sol";
-import "./TokenSender.sol";
 import "./utils/BytesLib.sol";
-
-/// @dev Interface of sender contract for approveAndCall pattern.
-interface tokenSender {
-    function approveAndCall(address _spender, uint256 _value, bytes calldata _extraData) external;
-}
+import "./KeepToken.sol";
 
 contract TokenGrantStake {
     using SafeMath for uint256;
@@ -51,11 +46,16 @@ contract TokenGrantStake {
     ) public onlyGrant {
         amount = _amount;
         operator = _extraData.toAddress(20);
-        tokenSender(address(token)).approveAndCall(
-            address(tokenStaking),
-            _amount,
-            _extraData
-        );
+        tokenRecipient spender = tokenRecipient(address(tokenStaking));
+
+        if (token.approve(address(tokenStaking), _amount)) {
+            spender.receiveApproval(
+                address(this),
+                _amount,
+                address(token),
+                _extraData
+            );
+        }
     }
 
     function getGrantId() public view onlyGrant returns (uint256) {
